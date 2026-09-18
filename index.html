@@ -14,7 +14,6 @@ body{background:var(--bg);color:#ece8df;font-family:Cairo,sans-serif;overflow-x:
 .latin{font-family:'Cormorant Garamond',serif}
 
 nav{position:fixed;top:0;right:0;left:0;z-index:100;display:flex;flex-direction:column;background:rgba(5,5,5,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-/* 📢 شريط الإعلانات */
 .annc{width:100%;background:linear-gradient(90deg,#9c7c1e,#e6c968,#9c7c1e);color:#0a0a0a;overflow:hidden;display:none}
 .annc.show{display:block}
 .antk{display:flex;gap:52px;white-space:nowrap;width:max-content;animation:sc 20s linear infinite;padding:6px 0}
@@ -261,7 +260,6 @@ body.edit [contenteditable=true]{outline:1.5px dashed rgba(212,175,55,.5);outlin
 <body>
 
 <nav>
-  <!-- 📢 شريط الإعلانات المتحرك -->
   <div class="annc" id="annc"><div class="antk" id="anncTrack"></div></div>
   <div class="nrow">
     <div id="navLogo" style="cursor:pointer" onclick="window.scrollTo({top:0,behavior:'smooth'})"></div>
@@ -385,7 +383,6 @@ body.edit [contenteditable=true]{outline:1.5px dashed rgba(212,175,55,.5);outlin
   </div>
 </div>
 
-<!-- 📦 استمارة الطلب (مع الخصم والتوصيل) -->
 <div class="fovl" id="fovl" onclick="closeOrderForm()"></div>
 <div class="fmodal" id="fmodal">
   <h3>🧾 إتمام الطلب</h3>
@@ -433,7 +430,8 @@ body.edit [contenteditable=true]{outline:1.5px dashed rgba(212,175,55,.5);outlin
   <label class="ebc">العملة: <input id="curIn" value="د.أ" onchange="setCur(this.value)"></label>
   <button class="eb" onclick="setPass()">🔑 كلمة المرور</button>
   <button class="eb red" onclick="resetAll()">↺ استعادة</button>
-  <button class="eb" onclick="toggleEdit()">✅ إنهاء</button>
+  <button class="eb" onclick="toggleEdit()">✅ إنهاء التعديل</button>
+  <button class="eb red" onclick="ownerLogout()">🚪 خروج</button>
 </div>
 <input type="file" id="imgIn" accept="image/*" hidden>
 <div id="toasts"></div>
@@ -455,7 +453,6 @@ products:[
 {id:7,br:"HERMÈS",nm:"Terre d'Hermès",ds:"ترابية حمضية رجالية تجمع الجريب فروت والفلينت وخشب السيدار. رجولة صافية بلمسة فرنسية.",pr:170,old:0,bd:"",cat:"رجالي",img:U("photo-1587017539504-67cfbddac569")},
 {id:8,br:"CARTIER",nm:"Déclaration",ds:"دفء الفلفل والهيل مع خشب الأرز، الحكاية العربية الفرنسية الأصيلة. يليق بالمناسبات الكبيرة.",pr:160,old:185,bd:"عرض خاص",cat:"رجالي",img:U("photo-1523293182086-7651a899d37f")}]};
 let S=JSON.parse(localStorage.getItem('noxmini')||'null')||JSON.parse(JSON.stringify(DEF));
-/* ترقية البيانات القديمة — تعديلاتك المحفوظة لن تضيع */
 if(!Array.isArray(S.orders))S.orders=[];
 if(!Array.isArray(S.coupons))S.coupons=JSON.parse(JSON.stringify(DEF.coupons));
 if(!Array.isArray(S.ship))S.ship=JSON.parse(JSON.stringify(DEF.ship));
@@ -500,7 +497,6 @@ function render(){
   $('#cWa').textContent=waFmt;$('#cPhone').textContent=waFmt;
   renderAnnc();renderCats();renderGrid();renderCart();
 }
-/* 📢 شريط الإعلانات */
 function renderAnnc(){
   const el=$('#annc');
   if(S.announce){
@@ -635,7 +631,6 @@ function checkout(){
     return{nm:p.nm,br:p.br,sz:szL||'',qty:q,pr:unitPrice(p,szL)}});
   openCheckout(items,true);
 }
-/* 📦 استمارة الطلب + الخصم + التوصيل */
 function openCheckout(items,fromCart){
   pendingItems=items;srcCart=fromCart;appliedCoupon=null;
   $('#f_coupon').value='';$('#cmsg').textContent='';$('#f_notes').value='';
@@ -703,7 +698,6 @@ function submitOrder(){
   closeOrderForm();
   toast('🎉 تم استلام طلبك! سنتواصل معك قريباً');
 }
-/* 📦 لوحة الطلبات */
 const ST={'جديد':'st-new','تم التأكيد':'st-cf','قيد التوصيل':'st-dv','تم التوصيل':'st-dn','ملغي':'st-cx'};
 const STLIST=Object.keys(ST);
 function openOrders(){renderOrders();$('#odvl').classList.add('show');$('#odmodal').classList.add('open');document.body.style.overflow='hidden'}
@@ -750,17 +744,35 @@ function addManual(){
   $('#m_name').value='';$('#m_phone').value='';$('#m_items').value='';$('#m_total').value='';
   toast('✅ تم تسجيل الطلب');
 }
-/* 🔐 دخول المالك: 3 نقرات على الشعار */
+/* 🔐 نظام حماية المالك — جلسة تنتهي تلقائياً بعد ساعة */
+const SESSION_MS=36e5;
+function isOwn(){
+  if(sessionStorage.getItem('o')!=='1')return false;
+  if(Date.now()-(+sessionStorage.getItem('ot')||0)>SESSION_MS){
+    sessionStorage.removeItem('o');sessionStorage.removeItem('ot');return false;
+  }
+  return true;
+}
+function ownerLogout(){
+  sessionStorage.removeItem('o');sessionStorage.removeItem('ot');
+  document.body.classList.remove('edit');
+  $('#ebar').classList.remove('show');
+  $('#pill').classList.remove('show');
+  $('#pill').textContent='👑 تشغيل التعديل';
+  edit=false;render();
+  toast('🚪 تم الخروج — أنت زائر الآن');
+}
 let c=0,t2;
  $('#navLogo').addEventListener('click',()=>{c++;clearTimeout(t2);t2=setTimeout(()=>c=0,700);
   if(c>=3){c=0;
-    if(sessionStorage.getItem('o')){toggleEdit();return}
+    if(isOwn()){toggleEdit();return}
     const p=prompt('🔑 كلمة مرور المالك:');
-    if(p===S.pass){sessionStorage.setItem('o','1');$('#pill').classList.add('show');toast('👑 أهلاً بالمالك — اضغط "تشغيل التعديل"')}
+    if(p===S.pass){sessionStorage.setItem('o','1');sessionStorage.setItem('ot',Date.now());$('#pill').classList.add('show');toast('👑 أهلاً بالمالك — اضغط "تشغيل التعديل"')}
     else if(p!==null)toast('✖ كلمة مرور خاطئة')}});
-if(sessionStorage.getItem('o'))$('#pill').classList.add('show');
+if(isOwn())$('#pill').classList.add('show');
+else{sessionStorage.removeItem('o');sessionStorage.removeItem('ot')}
 function toggleEdit(){
-  if(!sessionStorage.getItem('o'))return;
+  if(!isOwn())return;
   edit=!edit;document.body.classList.toggle('edit',edit);
   $('#ebar').classList.toggle('show',edit);
   $('#pill').textContent=edit?'✅ إنهاء التعديل':'👑 تشغيل التعديل';
@@ -814,7 +826,6 @@ function setSize(id){
   if(!szs.length){toast('✖ صيغة غير صحيحة');return}
   p.sizes=szs;save();render();toast('📏 أُضيف '+szs.length+' أحجام');
 }
-/* 🎟 أكواد الخصم — مع إحصائية الاستخدام */
 function setCoupons(){
   const stats=(S.coupons||[]).map(c=>`${c.code}: ${c.uses||0} استخدام`).join(' | ')||'لا يوجد';
   const cur=(S.coupons||[]).map(c=>`${c.code}=${c.type==='percent'?c.val+'%':c.val}`).join(', ');
@@ -829,14 +840,12 @@ function setCoupons(){
   if(!cs.length){toast('✖ صيغة غير صحيحة');return}
   S.coupons=cs;save();toast('🎟 تم حفظ '+cs.length+' كود');
 }
-/* 📢 شريط الإعلانات */
 function setAnnc(){
   const v=prompt('📢 نص شريط الإعلانات المتحرك\nيظهر أعلى الموقع للجميع دائماً\nاتركه فارغاً لإخفاء الشريط',S.announce||'');
   if(v===null)return;
   S.announce=v.trim();save();renderAnnc();
   toast(S.announce?'📢 تم تحديث الإعلان':'📢 تم إخفاء الشريط');
 }
-/* 🚚 أسعار التوصيل */
 function setShip(){
   const cur=S.ship.map(s=>`${s.name}=${s.pr}`).join(', ');
   const v=prompt('🚚 أسعار التوصيل لكل محافظة (دينار)\n\n'+cur+'\n\nعدّل القيم بالصيغة: المحافظة=السعر\nمثال: عمّان=2, إربد=3, العقبة=4.5',cur);
@@ -881,14 +890,21 @@ function compress(f,cb){
   });
   e.target.value='';
 });
-/* 💾 النسخ الاحتياطي */
+/* 💾 النسخ الاحتياطي — نسخة مُصلحة تعمل على كل المتصفحات والأجهزة */
 function backup(){
-  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='nox-backup-'+new Date().toISOString().slice(0,10)+'.json';
-  a.click();URL.revokeObjectURL(a.href);
-  toast('💾 تم تنزيل النسخة الاحتياطية');
+  try{
+    const data=JSON.stringify(S,null,2);
+    const name='nox-backup-'+new Date().toISOString().slice(0,10)+'.json';
+    let url=null;
+    try{url=URL.createObjectURL(new Blob([data],{type:'application/json'}))}catch(e){}
+    const a=document.createElement('a');
+    a.href=url||('data:application/json;charset=utf-8,'+encodeURIComponent(data));
+    a.download=name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{if(url)URL.revokeObjectURL(url);a.remove()},1500);
+    toast('💾 تم تنزيل النسخة الاحتياطية');
+  }catch(e){toast('⚠️ خطأ بالتنزيل: '+e.message)}
 }
 function restoreBk(){
   const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';
