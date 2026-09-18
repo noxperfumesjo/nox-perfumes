@@ -2,6 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NOX Perfumes — عطور فرنسية فاخرة</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800;900&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet">
@@ -744,17 +746,20 @@ function addManual(){
   $('#m_name').value='';$('#m_phone').value='';$('#m_items').value='';$('#m_total').value='';
   toast('✅ تم تسجيل الطلب');
 }
-/* 🔐 نظام حماية المالك — جلسة تنتهي تلقائياً بعد ساعة */
+/* 🔐 حماية المالك v3 — مفاتيح جلسة جديدة تماماً + خروج تلقائي بعد ساعة */
 const SESSION_MS=36e5;
+const OK='noxOwnV3', OT='noxOwnV3t';
+/* تنظيف الجلسات القديمة من النسخ السابقة على أي جهاز */
+sessionStorage.removeItem('o');sessionStorage.removeItem('ot');
 function isOwn(){
-  if(sessionStorage.getItem('o')!=='1')return false;
-  if(Date.now()-(+sessionStorage.getItem('ot')||0)>SESSION_MS){
-    sessionStorage.removeItem('o');sessionStorage.removeItem('ot');return false;
+  if(sessionStorage.getItem(OK)!=='1')return false;
+  if(Date.now()-(+sessionStorage.getItem(OT)||0)>SESSION_MS){
+    sessionStorage.removeItem(OK);sessionStorage.removeItem(OT);return false;
   }
   return true;
 }
 function ownerLogout(){
-  sessionStorage.removeItem('o');sessionStorage.removeItem('ot');
+  sessionStorage.removeItem(OK);sessionStorage.removeItem(OT);
   document.body.classList.remove('edit');
   $('#ebar').classList.remove('show');
   $('#pill').classList.remove('show');
@@ -767,10 +772,10 @@ let c=0,t2;
   if(c>=3){c=0;
     if(isOwn()){toggleEdit();return}
     const p=prompt('🔑 كلمة مرور المالك:');
-    if(p===S.pass){sessionStorage.setItem('o','1');sessionStorage.setItem('ot',Date.now());$('#pill').classList.add('show');toast('👑 أهلاً بالمالك — اضغط "تشغيل التعديل"')}
+    if(p===S.pass){sessionStorage.setItem(OK,'1');sessionStorage.setItem(OT,Date.now());$('#pill').classList.add('show');toast('👑 أهلاً بالمالك — اضغط "تشغيل التعديل"')}
     else if(p!==null)toast('✖ كلمة مرور خاطئة')}});
 if(isOwn())$('#pill').classList.add('show');
-else{sessionStorage.removeItem('o');sessionStorage.removeItem('ot')}
+else{sessionStorage.removeItem(OK);sessionStorage.removeItem(OT)}
 function toggleEdit(){
   if(!isOwn())return;
   edit=!edit;document.body.classList.toggle('edit',edit);
@@ -890,7 +895,7 @@ function compress(f,cb){
   });
   e.target.value='';
 });
-/* 💾 النسخ الاحتياطي — نسخة مُصلحة تعمل على كل المتصفحات والأجهزة */
+/* 💾 تصدير مُصلح — يعمل على كل المتصفحات والأجهزة */
 function backup(){
   try{
     const data=JSON.stringify(S,null,2);
